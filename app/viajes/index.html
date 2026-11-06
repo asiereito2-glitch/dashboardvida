@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Huella</title>
+<meta name="description" content="Tu mapa de viajes: países visitados, viajes y estadísticas, guardados en tu dispositivo.">
+<meta name="theme-color" content="#F6F1E7">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="embed.css">
+<script src="embed.js"></script>
+</head>
+<body>
+<svg width="0" height="0" class="defs" aria-hidden="true"><defs>
+  <clipPath id="huella-globe"><circle cx="256" cy="256" r="136"/></clipPath>
+  <symbol id="huella-mark" viewBox="40 40 432 432">
+    <path transform="rotate(-24 256 256)" d="M60 256A196 76 0 0 1 452 256" fill="none" stroke="var(--route)" stroke-width="10" stroke-dasharray="2 22" stroke-linecap="round"/>
+    <circle cx="256" cy="256" r="136" fill="var(--visited)"/>
+    <g clip-path="url(#huella-globe)" fill="none" stroke="var(--paper)" stroke-width="6" opacity=".85">
+      <ellipse cx="256" cy="256" rx="48" ry="136"/><ellipse cx="256" cy="256" rx="104" ry="136"/>
+      <path d="M256 120V392M120 256H392M134 190C200 214 312 214 378 190M134 322C200 298 312 298 378 322"/>
+    </g>
+    <g transform="rotate(-24 256 256)"><path d="M60 256A196 76 0 0 0 452 256" fill="none" stroke="var(--route)" stroke-width="12" stroke-linecap="round"/><path transform="translate(452 248) rotate(-8) scale(1.15)" fill="var(--ink)" d="M0 -34C5 -34 7 -26 7 -18L7 -8L38 12L38 20L7 10L7 26L16 33L16 39L0 34L-16 39L-16 33L-7 26L-7 10L-38 20L-38 12L-7 -8L-7 -18C-7 -26 -5 -34 0 -34Z"/></g>
+  </symbol>
+</defs></svg>
+<div id="splash" role="status" aria-label="Cargando Huella">
+  <svg class="logo" viewBox="40 40 432 432" aria-hidden="true">
+    <path class="route-back" transform="rotate(-24 256 256)" d="M60 256A196 76 0 0 1 452 256" fill="none" stroke="var(--route)" stroke-width="10" stroke-dasharray="2 22" stroke-linecap="round"/>
+    <g class="globe"><circle cx="256" cy="256" r="136" fill="var(--visited)"/>
+    <g clip-path="url(#huella-globe)" fill="none" stroke="var(--paper)" stroke-width="6" opacity=".85">
+      <ellipse cx="256" cy="256" rx="48" ry="136"/><ellipse cx="256" cy="256" rx="104" ry="136"/>
+      <path d="M256 120V392M120 256H392M134 190C200 214 312 214 378 190M134 322C200 298 312 298 378 322"/>
+    </g></g>
+    <g transform="rotate(-24 256 256)"><path class="route" pathLength="1" d="M60 256A196 76 0 0 0 452 256" fill="none" stroke="var(--route)" stroke-width="12" stroke-linecap="round"/><path class="plane" transform="translate(452 248) rotate(-8) scale(1.15)" fill="var(--ink)" d="M0 -34C5 -34 7 -26 7 -18L7 -8L38 12L38 20L7 10L7 26L16 33L16 39L0 34L-16 39L-16 33L-7 26L-7 10L-38 20L-38 12L-7 -8L-7 -18C-7 -26 -5 -34 0 -34Z"/></g>
+  </svg>
+  <strong>Huella</strong>
+  <span>Tu mapa de viajes</span>
+</div>
+<div id="app">
+  <nav class="nav" aria-label="Secciones">
+    <span class="brand"><svg class="logo" viewBox="40 40 432 432" aria-hidden="true"><use href="#huella-mark"/></svg>Huella</span>
+    <a href="#/mapa" data-tab="mapa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7 9 4Zm0 0v13m6-10v13"/></svg><span>Mapa</span></a>
+    <a href="#/viajes" data-tab="viajes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v12H4zM9 7V4.5h6V7"/></svg><span>Viajes</span></a>
+    <a href="#/paises" data-tab="paises"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4m0 1h12l-2.5 4 2.5 4H5"/></svg><span>Países</span></a>
+    <a href="#/resumen" data-tab="resumen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-7m7 7V4m7 16V9"/></svg><span>Resumen</span></a>
+  </nav>
+  <main>
+    <section id="view-mapa" class="view view-map" aria-label="Mapa">
+      <header class="hero" id="hero"></header>
+      <div class="map-panel" id="map-panel">
+        <div class="map-search">
+          <input id="map-search" type="search" placeholder="Buscar país" aria-label="Buscar país" autocomplete="off">
+          <ul id="map-results" class="results" hidden></ul>
+        </div>
+        <div id="map" class="map"></div>
+        <div class="map-tip" id="map-tip" hidden></div>
+        <div class="zoom">
+          <button id="zoom-in" aria-label="Acercar">+</button>
+          <button id="zoom-out" aria-label="Alejar">−</button>
+          <button id="zoom-fit" aria-label="Ver el mapa entero"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/></svg></button>
+        </div>
+        <div class="legend" id="legend"></div>
+      </div>
+    </section>
+    <section id="view-viajes" class="view" aria-label="Viajes" hidden></section>
+    <section id="view-paises" class="view" aria-label="Países" hidden></section>
+    <section id="view-resumen" class="view" aria-label="Resumen" hidden></section>
+  </main>
+</div>
+<dialog id="sheet" class="sheet" aria-label="Detalle"><div id="sheet-body"></div></dialog>
+<dialog id="confirm" class="confirm">
+  <p id="confirm-text"></p>
+  <div class="row-end">
+    <button class="btn" id="confirm-no">Cancelar</button>
+    <button class="btn danger" id="confirm-yes">Confirmar</button>
+  </div>
+</dialog>
+<div id="toast" class="toast" role="status" hidden></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

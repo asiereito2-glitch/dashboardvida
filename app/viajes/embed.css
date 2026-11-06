@@ -1,0 +1,79 @@
+/* Huella dentro de la app: mismo tema y cristal, sin su barra ni su pantalla de carga. */
+
+:root, :root[data-theme="light"] {
+  color-scheme: light;
+  --paper: #f4eee5;
+  --card: rgba(255, 255, 255, 0.46);
+  --ink: #1e1a15;
+  --muted: #5e564c;
+  --line: rgba(70, 52, 34, 0.16);
+  --ocean: rgba(255, 255, 255, 0.3);
+  --grid: rgba(70, 52, 34, 0.1);
+  --track: rgba(70, 52, 34, 0.13);
+  --shadow: 0 10px 30px rgba(70, 52, 34, 0.13);
+  --app-sheet: rgba(244, 238, 229, 0.94);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #1b1814;
+  --card: rgba(255, 255, 255, 0.075);
+  --ink: #f6f1e9;
+  --muted: #b6ac9e;
+  --line: rgba(255, 255, 255, 0.14);
+  --ocean: rgba(0, 0, 0, 0.25);
+  --grid: rgba(255, 255, 255, 0.07);
+  --land: rgba(255, 255, 255, 0.14);
+  --border: rgba(255, 255, 255, 0.26);
+  --track: rgba(255, 255, 255, 0.12);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --app-sheet: rgba(34, 30, 26, 0.95);
+}
+
+html, body { background: transparent !important; }
+body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+
+.nav, #splash { display: none !important; }
+[data-action="export"], .setting:has([data-action="theme"]) { display: none; }
+
+#app { display: block; height: 100%; }
+main { height: 100%; }
+.view { padding-top: 0; }
+.page { padding-top: 12px; padding-bottom: calc(var(--safe-b, 0px) + 116px); }
+
+/* Sitio para el botón del menú de la app. */
+.page-head { min-height: 44px; padding-left: 54px; }
+.page-head h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.3px; }
+.hero { padding-left: 68px; }
+
+.view-map { padding-bottom: calc(var(--safe-b, 0px) + 92px); }
+.map-panel {
+  margin: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+}
+
+h2 { font-weight: 600; }
+.tile b { font-weight: 700; }
+
+/* Tarjetas de cristal; lo que va sobre el mapa o en ventanas necesita fondo sólido. */
+.tile, .countries, .btn, .trip {
+  border-color: var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+}
+dialog, .results, .zoom button, .legend { background: var(--app-sheet); }
+.badge.on { color: #fff; }
+.tick.on svg { stroke: #fff; }
+
+.toast { bottom: calc(var(--safe-b, 0px) + 104px); }
+.sheet { padding-bottom: calc(var(--safe-b, 0px) + 1.1rem); }
+
+@media (min-width: 900px) {
+  #app { display: block; }
+  main { grid-column: auto; }
+  .page { max-width: 520px; }
+  .map-panel { max-width: 1100px; margin: 0 auto; }
+}

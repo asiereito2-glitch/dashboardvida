@@ -1,0 +1,81 @@
+/* Balance dentro de la app: mismos colores y sin su fondo ni su barra inferior. */
+
+html[data-style="glass"] {
+  --ink: #1e1a15;
+  --ink-soft: #2c261f;
+  --gray-700: #4a4238;
+  --gray-500: #5e564c;
+  --gray-400: #7d7365;
+  --gray-300: #b5a999;
+  --gray-200: rgba(70, 52, 34, 0.1);
+  --gray-150: rgba(255, 255, 255, 0.4);
+  --gray-100: rgba(255, 255, 255, 0.5);
+  --surface: rgba(255, 255, 255, 0.5);
+  --accent-bg: rgba(255, 255, 255, 0.46);
+  --accent-fg: #1e1a15;
+  --accent-fg-muted: #5e564c;
+  --sel-bg: #1e1a15;
+  --sel-fg: #fff;
+  --line: rgba(70, 52, 34, 0.14);
+  --line-soft: rgba(70, 52, 34, 0.09);
+  --money-pos: #0f8a66;
+  --money-neg: #c93c36;
+  --lg-fill: rgba(255, 255, 255, 0.46);
+  --lg-fill-strong: var(--app-sheet, rgba(244, 238, 229, 0.94));
+  --lg-shadow: 0 10px 30px rgba(70, 52, 34, 0.13);
+  --lg-rim: linear-gradient(transparent, transparent);
+  --safe-t: 0px;
+}
+
+html[data-style="glass"][data-theme="dark"] {
+  --ink: #f6f1e9;
+  --ink-soft: #e6dfd3;
+  --gray-700: #cfc6b8;
+  --gray-500: #b6ac9e;
+  --gray-400: #8f8678;
+  --gray-300: #5c554b;
+  --gray-200: rgba(255, 255, 255, 0.12);
+  --gray-150: rgba(255, 255, 255, 0.06);
+  --gray-100: rgba(255, 255, 255, 0.09);
+  --surface: rgba(255, 255, 255, 0.09);
+  --accent-bg: rgba(255, 255, 255, 0.075);
+  --accent-fg: #f6f1e9;
+  --accent-fg-muted: #b6ac9e;
+  --sel-bg: #f6f1e9;
+  --sel-fg: #17140f;
+  --line: rgba(255, 255, 255, 0.14);
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --money-pos: #41d6a7;
+  --money-neg: #ff7a72;
+  --lg-fill: rgba(255, 255, 255, 0.075);
+  --lg-fill-strong: var(--app-sheet, rgba(34, 30, 26, 0.95));
+  --lg-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Mismo esquema que la app: si no coincide, el navegador pinta el marco opaco. */
+:root { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+html, html[data-style="glass"] body, body { background: transparent !important; }
+html[data-style="glass"] body::before { display: none; }
+
+#shell { max-width: 520px; box-shadow: none !important; }
+#navwrap { display: none; }
+
+/* Sitio para la barra inferior y el botón + de la app. */
+#view { padding-bottom: 120px; }
+
+/* El avatar deja su sitio al botón del menú de la app. */
+.home-topbar { justify-content: flex-end; min-height: 56px; padding-top: 10px; }
+.home-topbar .avatar { display: none; }
+.home-topbar + .greeting-block { padding-top: 6px; }
+
+/* Títulos de pantalla junto al botón del menú. */
+#view > .greeting-block:first-child { padding-left: 72px; padding-top: 14px !important; min-height: 64px; }
+
+html[data-style="glass"] .modal-page,
+html[data-style="glass"] #lock,
+html[data-style="glass"] #boot { background: var(--app-page, #d8ccbc); }
+
+/* El tema y el estilo los decide la app. */
+.row-btn:has(+ #themeSeg), #themeSeg, .row-btn:has(+ #styleSeg), #styleSeg { display: none; }
