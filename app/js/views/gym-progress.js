@@ -1,7 +1,8 @@
 // Progreso del gimnasio: kilos por rutina, evolución de cada ejercicio y calendario.
 import { state } from '../store.js';
 import {
-  adviceFor, exerciseHistory, sessionsBetween, exerciseSummaries, readyToIncrease, routineSessions, routineNames,
+  MUSCLES, addExercise, adviceFor, canDeleteExercise, deleteExercise, exerciseHistory, exerciseList,
+  exerciseMuscle, readyToIncrease, routineSessions, routineNames, sessionsBetween, setExerciseMuscle,
   sessionVolume, sessionsNewestFirst, setWeeklyGoal, setsLabel, weekStats,
 } from '../gym.js';
 import { fmtNumber } from '../goals.js';
@@ -9,7 +10,9 @@ import {
   DAY_NAMES_SHORT, addDays, fromKey, monthGrid, monthLabel, relativeDayLabel, startOfWeek, toKey, todayKey,
 } from '../dates.js';
 import { icons } from '../icons.js';
-import { esc, navigate } from '../ui.js';
+import {
+  closeSheet, confirmSheet, esc, navigate, openSheet,
+} from '../ui.js';
 import { fmtKg, muscleCard, sessionRow } from './gym.js';
 
 const PROGRESS_ROUTE = '#/body/gym/progress';
@@ -33,6 +36,7 @@ let routineName = null;
 let metric = 'top';
 let shownMonth = null;
 let pickedDay = null;
+let muscleFilter = 'all';
 let musclePeriod = 'week';
 let muscleOffset = 0; // periodos hacia atrás desde el actual
 
@@ -148,11 +152,57 @@ function routinesTab() {
 
 const exerciseHref = (name) => `#/body/gym/exercise/${encodeURIComponent(name)}`;
 
-function exercisesTab() {
-  const list = exerciseSummaries();
-  if (!list.length) return '<div class="card empty small" style="margin-top:12px">Aquí verás cada ejercicio cuando termines tu primer entrenamiento.</div>';
-  const ready = readyToIncrease();
+const muscleLabel = (id) => MUSCLES.find((m) => m.id === id)?.label || 'Sin grupo';
+const matchesFilter = (muscle) => muscleFilter === 'all' || muscleFilter === (muscle || 'none');
+
+function muscleSelect(selected, attribute) {
   return `
+    <select class="date-input" ${attribute}>
+      <option value="">Sin indicar</option>
+      ${MUSCLES.map((m) => `<option value="${m.id}" ${m.id === selected ? 'selected' : ''}>${m.label}</option>`).join('')}
+    </select>`;
+}
+
+function filterChips(list) {
+  const present = new Set(list.map((e) => e.muscle || 'none'));
+  if (!present.has(muscleFilter)) muscleFilter = 'all';
+  const options = [
+    { id: 'all', label: 'Todos' },
+    ...MUSCLES.filter((m) => present.has(m.id)),
+    ...(present.has('none') ? [{ id: 'none', label: 'Sin grupo' }] : []),
+  ];
+  return `
+    <div class="gym-chips">
+      ${options.map((o) => `<button data-muscle-filter="${o.id}" class="${o.id === muscleFilter ? 'on' : ''}">${o.label}</button>`).join('')}
+    </div>`;
+}
+
+function exerciseRow(e) {
+  const when = e.lastDate ? relativeDayLabel(e.lastDate) : 'Sin entrenar';
+  let best = '';
+  if (e.top) best = `${fmtNumber(e.top)} kg`;
+  else if (e.topReps) best = `${fmtNumber(e.topReps)} reps`;
+  return `
+    <a class="gym-session-row" href="${exerciseHref(e.name)}">
+      <span class="grow">
+        <span class="gym-session-name">${esc(e.name)}</span>
+        <span class="small muted">${muscleLabel(e.muscle)} · ${when}</span>
+      </span>
+      <span class="small muted">${best}</span>
+    </a>`;
+}
+
+function exercisesTab() {
+  const list = exerciseList();
+  const addButton = `<button class="gym-action" data-add-exercise style="width:100%;margin-top:12px">${icons.plus}<span>Añadir ejercicio</span></button>`;
+  if (!list.length) return `${addButton}<div class="card empty small" style="margin-top:12px">Añade tus ejercicios para tenerlos guardados.</div>`;
+  const chips = filterChips(list);
+  const visible = list.filter((e) => matchesFilter(e.muscle));
+  const shown = new Set(visible.map((e) => e.name));
+  const ready = readyToIncrease().filter((r) => shown.has(r.name));
+  return `
+    ${chips}
+    ${addButton}
     ${ready.length ? `
       <div class="section-title" style="margin-top:20px">Listos para subir</div>
       <div class="card gym-session-list">
@@ -162,17 +212,56 @@ function exercisesTab() {
             <b class="gym-up">${r.suggest ? `${fmtNumber(r.suggest)} kg` : 'Más difícil'}</b>
           </a>`).join('')}
       </div>` : ''}
-    <div class="section-title" style="margin-top:20px">Todos</div>
-    <div class="card gym-session-list">
-      ${list.map((e) => `
-        <a class="gym-session-row" href="${exerciseHref(e.name)}">
-          <span class="grow">
-            <span class="gym-session-name">${esc(e.name)}</span>
-            <span class="small muted">${relativeDayLabel(e.lastDate)}</span>
-          </span>
-          <span class="small muted">${e.top ? `${fmtNumber(e.top)} kg` : `${fmtNumber(e.topReps)} reps`}</span>
-        </a>`).join('')}
+    <div class="section-title" style="margin-top:20px">${muscleFilter === 'all' ? 'Todos' : muscleLabel(muscleFilter === 'none' ? '' : muscleFilter)}</div>
+    <div class="card gym-session-list">${visible.map(exerciseRow).join('')}</div>`;
+}
+
+function addExerciseSheet() {
+  openSheet('Añadir ejercicio', `
+    <div class="stack">
+      <input class="text-input gym-sheet-input" data-name placeholder="Nombre del ejercicio" autocomplete="off">
+      <label class="field-row"><span>Grupo muscular</span>${muscleSelect('', 'data-muscle')}</label>
+      <div class="notice error" data-error hidden></div>
+      <button class="primary-btn" data-ok style="margin:0;width:100%">Guardar</button>
+    </div>`, (sheet) => {
+    sheet.querySelector('[data-ok]').onclick = () => {
+      const error = addExercise(sheet.querySelector('[data-name]').value, sheet.querySelector('[data-muscle]').value);
+      const box = sheet.querySelector('[data-error]');
+      box.textContent = error || '';
+      box.hidden = !error;
+      if (!error) closeSheet();
+    };
+  });
+}
+
+function muscleField(name) {
+  return `
+    <div class="card" style="margin-bottom:12px">
+      <label class="field-row"><span>Grupo muscular</span>${muscleSelect(exerciseMuscle(name), 'data-exercise-muscle')}</label>
     </div>`;
+}
+
+function bindMuscleField(root, name) {
+  root.querySelector('[data-exercise-muscle]').onchange = (e) => setExerciseMuscle(name, e.target.value);
+}
+
+function untrainedExercise(root, name) {
+  root.innerHTML = `
+    <header class="nav-header">
+      <a class="icon-btn" href="${PROGRESS_ROUTE}/exercises" aria-label="Volver">${icons.back}</a>
+      <h1>${esc(name)}</h1>
+      <span></span>
+    </header>
+    ${muscleField(name)}
+    <div class="card empty small">Aún no has entrenado este ejercicio. Sus gráficas aparecerán aquí.</div>
+    ${canDeleteExercise(name) ? '<button class="gym-discard small book-delete" data-delete>Borrar ejercicio</button>' : ''}`;
+  bindMuscleField(root, name);
+  root.querySelector('[data-delete]')?.addEventListener('click', () => {
+    confirmSheet('Borrar ejercicio', 'Se quitará de tus ejercicios guardados.', 'Borrar', () => {
+      deleteExercise(name);
+      navigate(`${PROGRESS_ROUTE}/exercises`);
+    });
+  });
 }
 
 const SERIES = {
@@ -184,7 +273,7 @@ const SERIES = {
 export function renderGymExercise(root, { name }) {
   const history = exerciseHistory(name);
   if (!history.length) {
-    root.innerHTML = `<div class="card empty small">Este ejercicio aún no tiene historial.</div>`;
+    untrainedExercise(root, name);
     return;
   }
   const weighted = history.some((h) => h.top > 0);
@@ -200,6 +289,7 @@ export function renderGymExercise(root, { name }) {
       <h1>${esc(name)}</h1>
       <span></span>
     </header>
+    ${muscleField(name)}
     ${advice ? `<div class="gym-advice" data-kind="${advice.kind}"><b>${esc(advice.title)}.</b> ${esc(advice.text)}</div>` : ''}
     <div class="stat-row">
       ${weighted ? `
@@ -226,6 +316,7 @@ export function renderGymExercise(root, { name }) {
           </span>
         </a>`).join('')}
     </div>`;
+  bindMuscleField(root, name);
   bindRange(root, () => renderGymExercise(root, { name }));
   root.querySelectorAll('[data-metric]').forEach((b) => {
     b.onclick = () => {
@@ -368,6 +459,13 @@ export function renderGymProgress(root, { tab }, entering) {
       redraw();
     };
   });
+  root.querySelectorAll('[data-muscle-filter]').forEach((b) => {
+    b.onclick = () => {
+      muscleFilter = b.dataset.muscleFilter;
+      redraw();
+    };
+  });
+  root.querySelector('[data-add-exercise]')?.addEventListener('click', addExerciseSheet);
   root.querySelectorAll('[data-period]').forEach((b) => {
     b.onclick = () => {
       musclePeriod = b.dataset.period;

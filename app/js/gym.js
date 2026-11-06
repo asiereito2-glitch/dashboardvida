@@ -31,6 +31,9 @@ const DEFAULT_INCREMENT = 2.5;
 
 const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
+// Ejercicios guardados aunque aún no estén en ninguna rutina ni entrenamiento.
+const catalog = () => (state.gym.catalog ||= []);
+
 // ---------- Rutinas ----------
 
 export function getRoutine(id) {
@@ -58,6 +61,7 @@ function renameExercise(from, to) {
   state.gym.routines.forEach((r) => r.exercises.forEach(rename));
   state.gym.sessions.forEach((s) => s.exercises.forEach(rename));
   state.gym.draft?.exercises.forEach(rename);
+  catalog().forEach(rename);
   state.goals.forEach((g) => {
     if (g.source?.type === 'exercise' && sameName(g.source.id, from)) g.source.id = to;
   });
@@ -67,6 +71,8 @@ export function saveRoutine(id, data, renames = []) {
   renames.forEach(([from, to]) => renameExercise(from, to));
   const routine = id ? getRoutine(id) : { id: uid() };
   Object.assign(routine, data);
+  // Un ejercicio ya conocido trae su grupo muscular.
+  routine.exercises.forEach((e) => { e.muscle ||= exerciseMuscle(e.name); });
   if (!id) state.gym.routines.push(routine);
   save();
   return routine;
@@ -96,6 +102,7 @@ export function exerciseNames() {
   const add = (e) => { if (!names.has(e.name.toLowerCase())) names.set(e.name.toLowerCase(), e.name); };
   state.gym.routines.forEach((r) => r.exercises.forEach(add));
   state.gym.sessions.forEach((s) => s.exercises.forEach(add));
+  catalog().forEach(add);
   return [...names.values()].sort((a, b) => a.localeCompare(b, 'es'));
 }
 
@@ -104,7 +111,7 @@ function knownExercise(name) {
     const found = routine.exercises.find((e) => sameName(e.name, name));
     if (found) return found;
   }
-  return null;
+  return catalog().find((e) => sameName(e.name, name)) || null;
 }
 
 // ---------- Entrenamiento en curso ----------
@@ -326,6 +333,7 @@ export function exerciseHistory(name) {
       date: session.date,
       sessionId: session.id,
       kind: e.kind,
+      muscle: e.muscle,
       sets: e.sets,
       top: topWeight(e),
       topReps: Math.max(...e.sets.map((s) => s.r)),
@@ -443,6 +451,58 @@ export function nextRoutine() {
 
 // Si el ejercicio se guardó sin grupo, vale el que tenga ahora en tus rutinas.
 const muscleOf = (exercise) => exercise.muscle || knownExercise(exercise.name)?.muscle || '';
+
+export function exerciseMuscle(name) {
+  return muscleOf({ name }) || exerciseHistory(name).reverse().find((h) => h.muscle)?.muscle || '';
+}
+
+// Todos los ejercicios: entrenados, de rutinas y guardados. Primero los más recientes.
+export function exerciseList() {
+  return exerciseNames()
+    .map((name) => {
+      const history = exerciseHistory(name);
+      return {
+        name,
+        muscle: exerciseMuscle(name),
+        lastDate: history.at(-1)?.date || null,
+        top: Math.max(0, ...history.map((h) => h.top)),
+        topReps: Math.max(0, ...history.map((h) => h.topReps)),
+      };
+    })
+    .sort((a, b) => (b.lastDate || '').localeCompare(a.lastDate || '') || a.name.localeCompare(b.name, 'es'));
+}
+
+// Devuelve el texto del error, o null si se ha guardado.
+export function addExercise(name, muscle) {
+  const clean = name.trim();
+  if (!clean) return 'Ponle un nombre.';
+  if (exerciseNames().some((n) => sameName(n, clean))) return 'Ya tienes un ejercicio con ese nombre.';
+  catalog().push({ name: clean, kind: 'weight', muscle });
+  save();
+  return null;
+}
+
+// El grupo se aplica al ejercicio en todas partes, también a lo ya entrenado.
+export function setExerciseMuscle(name, muscle) {
+  const apply = (e) => { if (sameName(e.name, name)) e.muscle = muscle; };
+  if (!catalog().some((e) => sameName(e.name, name))) catalog().push({ name, kind: 'weight', muscle });
+  catalog().forEach(apply);
+  state.gym.routines.forEach((r) => r.exercises.forEach(apply));
+  state.gym.sessions.forEach((s) => s.exercises.forEach(apply));
+  state.gym.draft?.exercises.forEach(apply);
+  save();
+}
+
+// Solo se puede borrar si no está en ninguna rutina ni tiene historial.
+export function canDeleteExercise(name) {
+  return !exerciseHistory(name).length
+    && !state.gym.routines.some((r) => r.exercises.some((e) => sameName(e.name, name)));
+}
+
+export function deleteExercise(name) {
+  state.gym.catalog = catalog().filter((e) => !sameName(e.name, name));
+  save();
+}
 
 // % de series por grupo, de mayor a menor. Las series sin grupo no cuentan en el %.
 export function muscleShares(sessions) {

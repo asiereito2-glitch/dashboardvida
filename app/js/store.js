@@ -30,7 +30,9 @@ function emptyState() {
     // peso en kg y horas dormidas, por fecha
     body: { weights: {}, sleep: {} },
     // rutinas, entrenamientos guardados y el que está en curso (`draft`)
-    gym: { routines: [], sessions: [], draft: null, weeklyGoal: 3 },
+    gym: {
+      routines: [], sessions: [], catalog: [], draft: null, weeklyGoal: 3,
+    },
     // las portadas van aparte, en covers.js
     books: [],
     // precio neto por hora, turnos guardados y turnos apuntados
